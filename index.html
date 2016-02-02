@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Flicker Gallery</title>
+
+        <style>
+        </style>
+    </head>
+
+    <body>
+        <script>
+            var API = {
+                flickr: {
+                    reqURL: 'https://api.flickr.com/services/rest/',
+                    apiKey: '801387f8102145153e1cdd7b487e8afc',
+                    accurqcy: 11, // means city wide
+                    methods: {
+                        search: 'flickr.photos.search',
+                        getSizes: 'flickr.photos.getSizes'
+                    },
+
+                    /**
+                     * Retreives flickr photos that was taken in the same city as the given lat and lon.
+                     * @param {string} lat - lat.
+                     * @param {string} lon - lon.
+                     * @param {function} callback - callback function
+                     */
+                    retreivePhotosAround: function(lat, lon, callback) {
+                        var params = {
+                            accuracy: this.accuracy,
+                            api_key: this.apiKey,
+                            format: 'json',
+                            lat: lat,
+                            lon: lon,
+                            method: this.methods.search,
+                            page: 1,
+                            per_page: 100
+                        };
+                        this.makeRequest('GET', params, callback);
+                    },
+
+                    makeRequest: function(method, params, callback) {
+                        // opens new request every time?
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function() {
+                            if (xhttp.readyState == 4 && xhttp.status == 200) {
+                                // is this safe to use?
+                                var jsondata = eval("(" + xhttp.responseText + ")") //retrieve result as an JavaScript object
+                                if (callsback) {
+                                    callback(jsondata);
+                                }
+                            }
+                        };
+                        xhttp.open("GET", "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=fd83245708c9c8639e9797c9ebed1a03&accuracy=11&lat=37.7758&lon=122.4128&page=1&format=json&nojsoncallback=1", true);
+                        xhttp.send();
+                    }
+                }
+                // google api, yahoo api etc
+            }
+        </script>
+    </body>
+</html>
+
+<!--
+https://api.flickr.com/services/rest/?
+method=flickr.photos.search&
+api_key=801387f8102145153e1cdd7b487e8afc&
+accuracy=11&
+lat=37.7758&
+lon=122.4128&
+page=1&
+format=json&
+per_page
+-->
