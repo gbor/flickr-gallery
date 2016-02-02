@@ -15,7 +15,7 @@
                 flickr: {
                     reqURL: 'https://api.flickr.com/services/rest/',
                     apiKey: '801387f8102145153e1cdd7b487e8afc',
-                    accurqcy: 11, // means city wide
+                    accuracy: 11, // means city wide
                     methods: {
                         search: 'flickr.photos.search',
                         getSizes: 'flickr.photos.getSizes'
@@ -28,37 +28,65 @@
                      * @param {function} callback - callback function
                      */
                     retreivePhotosAround: function(lat, lon, callback) {
+                        var self = this;
                         var params = {
                             accuracy: this.accuracy,
-                            api_key: this.apiKey,
+                            api_key: self.apiKey,
                             format: 'json',
                             lat: lat,
                             lon: lon,
-                            method: this.methods.search,
+                            method: self.methods.search,
                             page: 1,
-                            per_page: 100
+                            per_page: 100,
+                            nojsoncallback: 1
                         };
-                        this.makeRequest('GET', params, callback);
+                        self._makeRequest('GET', params, callback);
                     },
 
-                    makeRequest: function(method, params, callback) {
+                    // TODO:(ganbi) add doc when finalized
+                    _makeRequest: function(method, params, callback) {
+                        method = method || 'GET';
+                        params = params || {};
+                        var queryParams = this._constructParams(params);
+
                         // opens new request every time?
                         var xhttp = new XMLHttpRequest();
                         xhttp.onreadystatechange = function() {
                             if (xhttp.readyState == 4 && xhttp.status == 200) {
                                 // is this safe to use?
-                                var jsondata = eval("(" + xhttp.responseText + ")") //retrieve result as an JavaScript object
-                                if (callsback) {
+                                var jsondata = eval('(' + xhttp.responseText + ')')
+                                // TODO: (ganbi) handle error messages
+                                if (callback) {
                                     callback(jsondata);
                                 }
                             }
                         };
-                        xhttp.open("GET", "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=fd83245708c9c8639e9797c9ebed1a03&accuracy=11&lat=37.7758&lon=122.4128&page=1&format=json&nojsoncallback=1", true);
+                        xhttp.open('GET', this.reqURL + queryParams, true);
                         xhttp.send();
+                    },
+
+                    _constructParams: function(params) {
+                        if (!params) {
+                            return '';
+                        }
+
+                        var finalParams = '?';
+                        var key;
+                        for (par in params) {
+                            if (params.hasOwnProperty(par)) {
+                                finalParams = finalParams + par + '=' + params[par] + '&';
+                            }
+                        }
+
+                        return finalParams;
                     }
                 }
                 // google api, yahoo api etc
-            }
+            };
+
+            API.flickr.retreivePhotosAround('37.7758', '122.4128', function(data) {
+                console.log(data);
+            });
         </script>
     </body>
 </html>
@@ -73,4 +101,9 @@ lon=122.4128&
 page=1&
 format=json&
 per_page
+
+
+
+"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=fd83245708c9c8639e9797c9ebed1a03&accuracy=11&lat=37.7758&lon=122.4128&page=1&format=json&nojsoncallback=1", true);
+
 -->
