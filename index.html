@@ -10,16 +10,20 @@
     </head>
 
     <body>
-        <script>
+        <div id='tiles'>
+
+        </div>
+        <script >
             var API = {
                 flickr: {
-                    reqURL: 'https://api.flickr.com/services/rest/',
-                    apiKey: '801387f8102145153e1cdd7b487e8afc',
                     accuracy: 11, // means city wide
+                    apiKey: '801387f8102145153e1cdd7b487e8afc',
+                    loadFormat: 'json',
                     methods: {
                         search: 'flickr.photos.search',
                         getSizes: 'flickr.photos.getSizes'
                     },
+                    reqURL: 'https://api.flickr.com/services/rest/',
 
                     /**
                      * Retreives flickr photos that was taken in the same city as the given lat and lon.
@@ -27,20 +31,47 @@
                      * @param {string} lon - lon.
                      * @param {function} callback - callback function
                      */
-                    retreivePhotosAround: function(lat, lon, callback) {
+                    retreivePhotosAround: function(lat, lon, page, callback) {
                         var self = this;
                         var params = {
                             accuracy: this.accuracy,
                             api_key: self.apiKey,
-                            format: 'json',
+                            format: self.loadFormat,
                             lat: lat,
                             lon: lon,
                             method: self.methods.search,
-                            page: 1,
+                            page: page,
                             per_page: 100,
                             nojsoncallback: 1
                         };
                         self._makeRequest('GET', params, callback);
+                    },
+
+                    // TODO:(ganbi) once ready, change doc
+                    /**
+                     * Retreives flickr photos that was taken in the same city as the given lat and lon.
+                     * @param {string} lat - lat.
+                     * @param {string} lon - lon.
+                     * @param {function} callback - callback function
+                     */
+                    retreiveSizes: function(photo, page, callback) {
+                        if (!photo) {
+                            callback && callback(null, '1');
+                        }
+
+                        var self = this;
+                        var params = {
+                            api_key: self.apiKey,
+                            format: self.loadFormat,
+                            method: self.methods.getSizes,
+                            nojsoncallback: 1,
+                            photo_id: photo.id
+                        };
+                        var cb = function (data1)  {
+                            callback(photo, data1, page);
+                        };
+
+                        this._makeRequest('GET', params, cb);
                     },
 
                     // TODO:(ganbi) add doc when finalized
@@ -61,7 +92,7 @@
                                 }
                             }
                         };
-                        xhttp.open('GET', this.reqURL + queryParams, true);
+                        xhttp.open(method, this.reqURL + queryParams, true);
                         xhttp.send();
                     },
 
@@ -77,17 +108,64 @@
                                 finalParams = finalParams + par + '=' + params[par] + '&';
                             }
                         }
-
                         return finalParams;
                     }
                 }
                 // google api, yahoo api etc
             };
 
-            API.flickr.retreivePhotosAround('37.7758', '122.4128', function(data) {
-                console.log(data);
+            API.flickr.retreivePhotosAround('37.7758', '122.4128', 1, function(data, error) {
+                if (data && !error) {
+
+                    var photos = data.photos && data.photos.photo;
+                    photos.forEach(function(photo, inx){
+                        var renderTiles = function(photo, data, page) {
+                            photo.sizes = data; // photo.sizes.sizes
+                            var sizes = data.sizes.size;
+                            var l = sizes.length;
+
+                            // get the 150 square size
+                            if (l > 2 || l === 2){
+                                sq150 = sizes[1];
+                                if (sq150.label === 'Large Square' || sq150.label == 'Original') {
+                                    var tiles = document.getElementById('tiles');
+
+                                    var tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML =
+                                        '<img ' +
+                                            'src="' + sq150.source + '" ' +
+                                            'data-page="' + page + '" ' +
+                                            'data-index="' + inx +'" ' +
+                                            'style="' + 'width: 150px; height: 150px' + '" ' +
+                                        '/>';
+                                    tiles.appendChild(tempDiv.firstChild);
+                                }
+                            }
+                            console.log('here is my sizes');
+                            console.log(data);
+                            console.log(photo);
+                        }
+                        // TODO:(ganbi) change the page to var
+                        API.flickr.retreiveSizes(photo, 1, renderTiles);
+                    });
+                    console.log(data);
+                } else if (error) {
+                    // something happened;
+                }
+
+                        /*var l = photos.length;
+                        var i;
+                        for (i = 0; i < l; i++){
+                            var photo = photophotos[i];
+                        }*/
+
+                setTimeout(function() {
+                    console.log('data after getting sizes');
+                    console.log(data);
+                }, 1000);
             });
         </script>
+
     </body>
 </html>
 
