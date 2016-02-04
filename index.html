@@ -67,6 +67,7 @@
                 width: 100%;
                 height: 100%;
                 display: flex;
+                display: -webkit-flex;
                 margin: 0px;
             }
             .slideshow img {
@@ -81,11 +82,17 @@
                 margin: 0;
                 padding: 0;
                 display: flex;
+                display: -webkit-flex;
                 position: absolute;
                 transition: left .15s;
             }
             .navigation-underlay:hover .icon{
                 opacity: 1;
+            }
+
+            .D\(flex\) {
+                display: flex;
+                display: -webkit-flex;
             }
         </style>
     </head>
@@ -221,6 +228,7 @@
 
         <script>
             // Contains the logic of populating tiles and managing lighbox slideshow
+            // TODO: might need to add Webkit for some styles?
             var Gallery = {
                 photos: [], // (index + 1) are the pages
                 lightBoxOrder: [], // (page - 1) is the key [1 -1] = [sizes]  array order is the order wich it was adde to page.
@@ -298,7 +306,7 @@
                                 '<img ' +
                                     'src="' + sq150.source + '" ' +
                                     'data-page="' + page + '" ' +
-                                    'data-indx="' + ordIndx +'" ' +
+                                    'data-indx="' + ordIndx + '" ' +
                                     'style="' + 'width: 150px; height: 150px' + '" ' +
                                 '/>';
                             tiles.appendChild(tempDiv.firstChild);
@@ -310,44 +318,60 @@
                     var targ = this._getTarget(e);
                     var page = targ.dataset.page;
                     var photoIndx = targ.dataset.indx;
-                    this._loadCloseSlides(page, photoIndx);
+                    this.currentSlide.page = page;
+                    this.currentSlide.idx = photoIndx;
+                    var startIndex = photoIndx - this.prevLoad;
+                    var numOfSlides = this.prevLoad + this.nextLoad + 1;
+                    this._loadSlides(startIndex, numOfSlides);
                     document.getElementsByTagName('body')[0].style.overflow = 'hidden';
-                    document.getElementsByClassName('lightbox')[0].style.display = 'flex';
+                    document.getElementsByClassName('lightbox')[0].className += ' D(flex)';
                 },
-
-
-                // initially null
+                // should be null initially, leaving them for self documentation
                 currentSlide: {
                     node: null,
                     page: null,
                     idx: null
                 },
 
-                // num of prev slides to load not including the current
+                // num of prev slides to load not including the current initially. initially === everytime lb opens
                 prevLoad: 2,
-                // num of next slides to load not including the current
+                // num of next slides to load not including the current initially. initially === everytime lb opens
                 nextLoad: 5,
                 // starts to load slides on the given img.
-                _loadCloseSlides: function (page, ordIndx) {
+                // start index is inclusive
+                _loadSlides: function (startIndex, numOfSlides, isPrepend) {
                     // TODO: worry about going from page to page, or page ending
+                    // TODO: change indx to idx
                     var slidesContainer = document.getElementsByClassName('js-slides')[0];
 
-                    totalToLoad = this.prevLoad + 1 + this.nextLoad;
+                    var ordIndx = this.currentSlide.idx;
                     var i;
                     var tempDiv;
                     var params;
                     var currentIndex;
-                    var startIndex = ordIndx - this.prevLoad;
-                    if ( startIndex < 0 ) {
+                    // TODO: or if start index is bigger than the available widh??
+                    // TODO: on the two edge when we run into another page?
+                    // TODO: startindex is inclusive so check that.
+                    if ( isPrepend && startIndex < 0 ) {
+                        return true;
+                    } else if (startIndex < 0) {
                         currentIndex = 0;
                     } else {
-                        currentIndex = startIndex;
+                        currentIndex = startIndex
                     }
-                    for (i = 0; i < totalToLoad; i++) {
+
+                    for (i = 0; i < numOfSlides; i++) {
                         params = {};
                         // TODO: normalize the sizes getting function. we're using it somewhere else as well
-                        params.src = this.lightBoxOrder[page - 1][currentIndex].sizes.size[6].source; //'https://farm8.staticflickr.com/7349/9739568142_f664ff93cb_o.jpg';
-                        tempDiv = document.createElement('div');
+                        // TODO: change num 6 to a getter function
+                        if (!this.lightBoxOrder[this.currentSlide.page - 1][currentIndex]) {
+                            // change page breaking for now
+                            return true;
+                        }
+                        params.src = this.lightBoxOrder[this.currentSlide.page - 1][currentIndex].sizes.size[6].source; //'https://farm8.staticflickr.com/7349/9739568142_f664ff93cb_o.jpg';
+                        // TODO: when it goes to the next page this page have to change and cannot stay the same
+                        params.page = this.currentSlide.page;
+                        params.idx = currentIndex;
                         if (currentIndex < ordIndx) {
                             params.style = 'left: -100%;';
                         } else if (currentIndex == ordIndx) {
@@ -357,20 +381,27 @@
                             params.style = 'left: 100%;';
                         }
 
+                        tempDiv = document.createElement('div');
                         tempDiv.innerHTML = this._constructSlide(params);
-                        slidesContainer.appendChild(tempDiv.firstChild);
+
+
+                        if (isPrepend) {
+                            slidesContainer.insertBefore(tempDiv.firstChild, slidesContainer.childNodes[0]);
+                        }  else {
+                            slidesContainer.appendChild(tempDiv.firstChild);
+                        }
+
                         if (currentIndex == ordIndx) {
                             // TODO: intentially chose == for now.
-                            this.currentSlide = slidesContainer.lastElementChild;
+                            this.currentSlide.node = slidesContainer.lastElementChild;
                         }
-                        currentIndex++;
+
+                        if (isPrepend) {
+                            currentIndex--;
+                        }  else {
+                            currentIndex++;
+                        }
                     }
-
-                    console.log('initial load happened');
-                },
-
-                _loadSlides: function (page, ordIndx){
-
                 },
 
                 //TODO: have to add the size etc for responsive browser
@@ -379,7 +410,11 @@
                         return '';
                     }
                     return (
-                        '<li style="' + params.style + '">' +
+                        '<li ' +
+                            'style="' + params.style + '" ' +
+                            'data-page="' + params.page + '" ' +
+                            'data-indx="' + params.idx + '" ' +
+                        '>' +
                              '<figure>' +
                                 '<img src="' + params.src + '">' +
                             '</figure>' +
@@ -390,36 +425,63 @@
                 onNextClick: function () {
                     // TODO: What happens if we're at the end of the slide?
                     // if need to load slide call load
-                    var current = this.currentSlide;
+                    var current = this.currentSlide.node;
                     if (!current) {
                         return;
                     }
                     var next = current.nextElementSibling;
 
+                    if (!next) {
+                        return;
+                    }
+
                     current.style.left = '-100%';
                     next.style.left = '0';
-                    this.currentSlide = next;
+                    var oneBeforeLast;
+                    if (!this.currentSlide.oneBeforeLast && !next.nextElementSibling.nextElementSibling) {
+                        oneBeforeLast = this._loadSlides(parseInt(next.nextElementSibling.dataset.indx, 10) + 1, 6);
+                    }
+                    // TODO: need to change page as well here
+                    this.currentSlide.node = next;
+                    this.currentSlide.idx = next.dataset.indx;
+                    this.currentSlide.page = next.dataset.page;
+                    this.currentSlide.oneBeforeLast = oneBeforeLast;
+                    // TODO: make the button disapper when no more
                 },
 
                 onPrevClick: function () {
                     // TODO: What happens if we're at the beginning of slides?
                     // if need to load slides call load
-                    var current = this.currentSlide;
+                    var current = this.currentSlide.node;
                     if (!current) {
                         return;
                     }
                     var prev = current.previousElementSibling;
+                    if (!prev) {
+                        return;
+                    }
                     current.style.left = '100%';
                     prev.style.left = '0';
-                    this.currentSlide = prev;
+                    // if prev slide before this is not loaded, load 6 more at the beginning.
+                    var secondSlide;
+                    if (!this.currentSlide.secondSlide && !prev.previousElementSibling.previousElementSibling) {
+                        secondSlide = this._loadSlides(parseInt(prev.previousElementSibling.dataset.indx, 10) - 1, 6, true);
+                    }
+                    // TODO: need to change page as well here
+                    this.currentSlide.node = prev;
+                    this.currentSlide.idx = prev.dataset.indx;
+                    this.currentSlide.page = prev.dataset.page;
+                    this.currentSlide.secondSlide = secondSlide;
+                    // TODO: make the button disapper when no more
                 },
 
                 closeLightbox: function (e) {
                     // remove the ul children, reset the currentSlide
                     var targ = this._getTarget(e);
-                    if (targ.className === 'lightbox') {
+
+                    if ( targ.className.indexOf('lightbox') > -1 ) {
                         document.getElementsByTagName('body')[0].style.overflow = '';
-                        document.getElementsByClassName('lightbox')[0].style.display = 'none';
+                        document.getElementsByClassName('lightbox')[0].className = 'lightbox';
                         this.currentSlide.node = null;
                         this.currentSlide.page = null;
                         this.currentSlide.idx = null;
@@ -446,10 +508,11 @@
         </script>
         <script>
             // add event listener to only the parent of all tiles to use bubbling and to have less number of listeners.
+            // TODO: better way to handle the bind?
             document.getElementById('tiles').addEventListener("click", Gallery.openLightbox.bind(Gallery));
             document.getElementsByClassName('lightbox')[0].addEventListener("click", Gallery.closeLightbox.bind(Gallery));
-            document.getElementsByClassName('prev navigation-underlay')[0].addEventListener("click", Gallery.onPrevClick.bind(Gallery));
-            document.getElementsByClassName('next navigation-underlay')[0].addEventListener("click", Gallery.onNextClick.bind(Gallery));
+            document.getElementsByClassName('prev')[0].addEventListener("click", Gallery.onPrevClick.bind(Gallery));
+            document.getElementsByClassName('next')[0].addEventListener("click", Gallery.onNextClick.bind(Gallery));
             Gallery.populateTiles();
         </script>
     </body>
