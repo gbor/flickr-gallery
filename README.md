@@ -29,3 +29,4 @@ Don’t have yet but would like to have:
 - If let’s say the list of photos becomes so big, we’re storing some related data in memory so even though it’s not that 	big of data, it’s possible to run out eventually.  -Use browser store?
 - Use the IP address of user to figure out the location as accurately as possible and then render the images around that location. http://ipinfo.io/  http://ipinfo.io/developers
 - Lazy load the thumbnail images as well.
+- After viewing bunch of slides and close it, it scroll down to that thumbnail to give user grab of what just finsihed on.

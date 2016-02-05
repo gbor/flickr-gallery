@@ -26,7 +26,10 @@
                 top: 50%;
                 margin-top: -22px;
                 opacity: .1;
-                transition: opacity 0.2s linear;
+                -webkit-transition: opacity 200ms linear;
+                -moz-transition: opacity 200ms linear;
+                -o-transition: opacity 200ms linear;
+                transition: opacity 200ms linear;
             }
             .navigation-underlay {
                 height: 100%;
@@ -71,8 +74,13 @@
             figure {
                 width: 100%;
                 height: 100%;
-                display: flex;
+                display: -webkit-box;
+                display: -moz-box;
+                display: -ms-flexbox;
                 display: -webkit-flex;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 margin: 0px;
             }
             .slideshow img {
@@ -86,18 +94,27 @@
                 height: 100%;
                 margin: 0;
                 padding: 0;
-                display: flex;
+                display: -webkit-box;
+                display: -moz-box;
+                display: -ms-flexbox;
                 display: -webkit-flex;
+                display: flex;
                 position: absolute;
-                transition: left .15s;
+                -webkit-transition: left 150ms;
+                -moz-transition: left 150ms;
+                -o-transition: left 150ms;
+                transition: left 150ms;
             }
             .navigation-underlay:hover .icon{
                 opacity: 1;
             }
 
             .D\(flex\) {
-                display: flex;
+                display: -webkit-box;
+                display: -moz-box;
+                display: -ms-flexbox;
                 display: -webkit-flex;
+                display: flex;
             }
 
             .spinner {
@@ -409,15 +426,29 @@
                         }
                     }
                 },
+                _getDataAtt: function (elm, dataAtt) {
+                    if(elm.dataset !== undefined) { // standard approach
+                        return elm.dataset[dataAtt];
+                    } else {
+                        console.log('data-' + dataAtt);
+                        console.log(elm.getAttribute('data-' + dataAtt));
+                        // TODO: dataAtt might come in camel cased
+                        return elm.getAttribute('data-' + dataAtt); // IE approach
+                    }
+                },
 
                 openLightbox: function (e) {
                     var targ = this._getTarget(e);
-                    var page = targ.dataset.page;
-                    var photoIndx = targ.dataset.indx;
+                    console.log('this is the targ');
+                    console.log(targ);
+                    var page = this._getDataAtt(targ, 'page');
+                    var photoIndx = this._getDataAtt(targ, 'indx');
                     this.currentSlide.page = page;
                     this.currentSlide.idx = photoIndx;
+                    console.log(this.currentSlide);
                     var startIndex = photoIndx - this.prevLoad;
                     var numOfSlides = this.prevLoad + this.nextLoad + 1;
+                    console.log(this.currentSlide);
                     this._loadSlides(startIndex, numOfSlides);
                     this._updateImageNote();
                     document.getElementsByTagName('body')[0].style.overflow = 'hidden';
@@ -458,6 +489,8 @@
                     }
 
                     for (i = 0; i < numOfSlides; i++) {
+                        console.log(this.currentSlide.page);
+                        console.log(currentIndex);
                         params = {};
                         // TODO: normalize the sizes getting function. we're using it somewhere else as well
                         // TODO: change num 6 to a getter function
@@ -573,12 +606,15 @@
                     next.style.left = '0';
                     var oneBeforeLast;
                     if (!this.currentSlide.oneBeforeLast && !next.nextElementSibling.nextElementSibling) {
-                        oneBeforeLast = this._loadSlides(parseInt(next.nextElementSibling.dataset.indx, 10) + 1, 6);
+                        oneBeforeLast = this._loadSlides(
+                            parseInt(this._getDataAtt(next.nextElementSibling, 'indx'), 10) + 1,
+                            6
+                        );
                     }
                     // TODO: need to change page as well here
                     this.currentSlide.node = next;
-                    this.currentSlide.idx = next.dataset.indx;
-                    this.currentSlide.page = next.dataset.page;
+                    this.currentSlide.idx = this._getDataAtt(next, 'indx');
+                    this.currentSlide.page = this._getDataAtt(next, 'page');
                     this._updateImageNote();
                     this.currentSlide.oneBeforeLast = oneBeforeLast;
 
@@ -601,12 +637,16 @@
                     // if prev slide before this is not loaded, load 6 more at the beginning.
                     var secondSlide;
                     if (!this.currentSlide.secondSlide && !prev.previousElementSibling.previousElementSibling) {
-                        secondSlide = this._loadSlides(parseInt(prev.previousElementSibling.dataset.indx, 10) - 1, 6, true);
+                        secondSlide = this._loadSlides(
+                            parseInt(this._getDataAtt(prev.previousElementSibling, 'indx'), 10) - 1,
+                            6,
+                            true
+                        );
                     }
                     // TODO: need to change page as well here
                     this.currentSlide.node = prev;
-                    this.currentSlide.idx = prev.dataset.indx;
-                    this.currentSlide.page = prev.dataset.page;
+                    this.currentSlide.idx = this._getDataAtt(prev, 'indx');
+                    this.currentSlide.page = this._getDataAtt(prev, 'page');
                     this._updateImageNote();
                     this.currentSlide.secondSlide = secondSlide;
                     // TODO: make the button disapper when no more
@@ -637,6 +677,8 @@
 
                 _getTarget: function (e) {
                     e = e || window.event;
+                    console.log('_getTarget is called' );
+                    console.log(e);
                     var targ = e.target || e.srcElement;
                     // for safari
                     if (targ.nodeType == 3) {
@@ -662,15 +704,26 @@
             };
         </script>
         <script>
+            // TODO: doesn't belong here, wrap with something
+            function addEvent(element,evName,fn) {
+                if (element.addEventListener) {
+                    element.addEventListener(evName,fn,false);
+                } else if (element.attachEvent) {
+                    element.attachEvent('on'+evName,function(e) {
+                        fn(e || window.event);
+                    });
+                }
+            }
             // add event listener to only the parent of all tiles to use bubbling and to have less number of listeners.
             // TODO: better way to handle the bind?
             // TODO: Create eventhandler registerer function
-            document.getElementById('tiles').addEventListener("click", Gallery.openLightbox.bind(Gallery));
-            document.getElementsByClassName('lightbox')[0].addEventListener("click", Gallery.onLightboxClick.bind(Gallery));
-            document.getElementsByClassName('prev')[0].addEventListener("click", Gallery.onPrevClick.bind(Gallery));
-            document.getElementsByClassName('next')[0].addEventListener("click", Gallery.onNextClick.bind(Gallery));
-            document.getElementsByClassName('js-close')[0].addEventListener("click", Gallery.closeLightbox.bind(Gallery));
-            document.addEventListener("keydown", function (e) {
+            addEvent(document.getElementById('tiles'), 'click', Gallery.openLightbox.bind(Gallery));
+            addEvent(document.getElementsByClassName('lightbox')[0], 'click', Gallery.onLightboxClick.bind(Gallery));
+            addEvent(document.getElementsByClassName('prev')[0], 'click', Gallery.onPrevClick.bind(Gallery));
+            addEvent(document.getElementsByClassName('next')[0], 'click', Gallery.onNextClick.bind(Gallery));
+            addEvent(document.getElementsByClassName('js-close')[0], 'click', Gallery.closeLightbox.bind(Gallery));
+            addEvent(document.getElementsByClassName('image-note')[0],'mousedown', function(e){ e.preventDefault(); });
+            addEvent(document, 'keydown', function (e) {
                 var LEFT_ARROW = 37;
                 var RIGHT_ARROW = 39;
                 var ESC = 27;
