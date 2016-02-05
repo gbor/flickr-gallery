@@ -36,8 +36,6 @@ var Gallery = {
     },
 
     _afterPhotosRetrieved: function (data, error) {
-        console.log('after photos reter is called');
-        console.log(data);
         var self = this;
         if (data && !error) {
             // TODO: There seems like a bug where some pages comes back empty but with status 200.
@@ -167,7 +165,7 @@ var Gallery = {
         } else {
             // TODO: dataAtt might come in camel cased
             return elm.getAttribute('data-' + dataAtt); // IE approach
-        }``
+        }
     },
 
     openLightbox: function (e) {
