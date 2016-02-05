@@ -6,7 +6,6 @@ Design Inspirations:
 - Sources: Next and Prev nav buttons icon -> Facebook image
 - Yahoo Article Slideshow
 - Facebook slideshow
-- Glassdoor slideshow
 
 
 
@@ -17,10 +16,11 @@ Performance features:
 - As individual thumbnails come back from the API, it's rendered right away without waiting for the others to
 load completely.
 
-UX:
+UX in mind features:
 - Tooltip when needed, for the next and prev button
 - Responsive design
 - Transition and animation to better assist and aid usability.
+- When image title is too long make sure to add Ellipsis on browser resize.
 
 Don’t have yet but would like to have:
 - Non-square thumbnails, but create a mosaic much like the yahoo-magazine/flicker image tiles
