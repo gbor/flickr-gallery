@@ -145,12 +145,36 @@
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
+            .close {
+                display: inline-block;
+                color: black;
+                opacity: .5;
+                position: absolute;
+                right: 0;
+                padding: 30px;
+            }
+            .close:hover {
+                cursor: pointer;
+            }
+            .close i {
+                background-image: url(http://www.facebook.com/rsrc.php/v2/yf/r/wCHj0Tn-0EZ.png);
+                background-size: auto;
+                background-repeat: no-repeat;
+                background-position: center;
+                width: 16px;
+                height: 16px;
+                background-position: -36px -189px;
+                display: block;
+            }
         </style>
     </head>
 
     <body onscroll="scrolled(this)">
         <div id="tiles"></div>
         <div class="lightbox" >
+            <div class="close js-close" title="Close Slideshow">
+                <i></i>
+            </div>
         	<div class="slideshow">
                 <ul class="js-slides">
                 </ul>
@@ -588,22 +612,26 @@
                     // TODO: make the button disapper when no more
                 },
 
-                closeLightbox: function (e) {
+                onLightboxClick: function (e) {
                     // remove the ul children, reset the currentSlide
                     var targ = this._getTarget(e);
 
                     if ( targ.className.indexOf('lightbox') > -1 ) {
-                        document.getElementsByTagName('body')[0].style.overflow = '';
-                        document.getElementsByClassName('lightbox')[0].className = 'lightbox';
-                        this.currentSlide.node = null;
-                        this.currentSlide.page = null;
-                        this.currentSlide.idx = null;
-                        var slides =  document.getElementsByClassName('js-slides')[0];
-                        // remove all children to reset.
-                        // much faster and better than using .innerHTML = ''
-                        while (slides.firstChild) {
-                            slides.removeChild(slides.firstChild);
-                        }
+                        this.closeLightbox();
+                    }
+                },
+
+                closeLightbox: function () {
+                    document.getElementsByTagName('body')[0].style.overflow = '';
+                    document.getElementsByClassName('lightbox')[0].className = 'lightbox';
+                    this.currentSlide.node = null;
+                    this.currentSlide.page = null;
+                    this.currentSlide.idx = null;
+                    var slides =  document.getElementsByClassName('js-slides')[0];
+                    // remove all children to reset.
+                    // much faster and better than using .innerHTML = ''
+                    while (slides.firstChild) {
+                        slides.removeChild(slides.firstChild);
                     }
                 },
 
@@ -636,10 +664,26 @@
         <script>
             // add event listener to only the parent of all tiles to use bubbling and to have less number of listeners.
             // TODO: better way to handle the bind?
+            // TODO: Create eventhandler registerer function
             document.getElementById('tiles').addEventListener("click", Gallery.openLightbox.bind(Gallery));
-            document.getElementsByClassName('lightbox')[0].addEventListener("click", Gallery.closeLightbox.bind(Gallery));
+            document.getElementsByClassName('lightbox')[0].addEventListener("click", Gallery.onLightboxClick.bind(Gallery));
             document.getElementsByClassName('prev')[0].addEventListener("click", Gallery.onPrevClick.bind(Gallery));
             document.getElementsByClassName('next')[0].addEventListener("click", Gallery.onNextClick.bind(Gallery));
+            document.getElementsByClassName('js-close')[0].addEventListener("click", Gallery.closeLightbox.bind(Gallery));
+            document.addEventListener("keydown", function (e) {
+                var LEFT_ARROW = 37;
+                var RIGHT_ARROW = 39;
+                var ESC = 27;
+                e = e || window.event;
+                var keyCode = e.which && e.which || e.keyCode;
+                if (keyCode === LEFT_ARROW) {
+                    Gallery.onPrevClick.bind(Gallery)();
+                } else if (keyCode === RIGHT_ARROW) {
+                    Gallery.onNextClick.bind(Gallery)();
+                } else if (keyCode === ESC) {
+                    Gallery.closeLightbox.bind(Gallery)();
+                }
+            });
             Gallery.populateTiles();
             window.onscroll = function() {
                 // var buffer = 150; // px

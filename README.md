@@ -21,6 +21,8 @@ UX in mind features:
 - Responsive design
 - Transition and animation to better assist and aid usability.
 - When image title is too long make sure to add Ellipsis on browser resize.
+- Bigger next and previous button underlay.
+- Next and Previous arrow and ESC keys control the slideshow as well.
 
 Don’t have yet but would like to have:
 - Non-square thumbnails, but create a mosaic much like the yahoo-magazine/flicker image tiles
