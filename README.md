@@ -30,3 +30,6 @@ Don’t have yet but would like to have:
 - Use the IP address of user to figure out the location as accurately as possible and then render the images around that location. http://ipinfo.io/  http://ipinfo.io/developers
 - Lazy load the thumbnail images as well.
 - After viewing bunch of slides and close it, it scroll down to that thumbnail to give user grab of what just finsihed on.
+- Load the images non-linear on the browser
+- When list of thumbnails shown gets really long, start removing from the top and we can have at most n number of images in DOM.
+- Same for the slideshow.
