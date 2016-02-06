@@ -33,6 +33,7 @@ UX in mind features:
 Known bugs and Issues:
 - Since there's no smartphone detection, it still loads the thumbnails Desktop-appropraite numbers and it's slow
 - On chrome, unlike other browsers when height is too small the img ratio is not kept
+- On IE10 the throbber doesn't spin, but looks like a static img.
 
 
 Don’t have yet but would love to have:
