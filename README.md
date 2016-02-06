@@ -1,7 +1,7 @@
 
 This project/web page shows the gallery of images taken around Yosemite.  Location detection and taking user input is the next feature to be added.
 
-Final Demo can be found at http://gbor.github.io/index.html
+Final Demo can be found at http://gbor.github.io
 
 Design Inspirations:
 - Sources: Next and Prev nav buttons icon -> Facebook image
