@@ -8,6 +8,11 @@ Design Inspirations:
 - Yahoo Article Slideshow
 - Facebook slideshow
 
+Verified and Tested On:
+- Chrome Version 48.0.2564.103
+- Firefox Version 40.0.3
+- Safari Version 8.0
+- IE10 on Windows 8
 
 Performance features:
 - Event handlers only on the parent of the thumbnails for better performance
