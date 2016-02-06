@@ -27,7 +27,7 @@ UX in mind features:
 - When image title is too long make sure to add Ellipsis on browser resize
 - Bigger next and previous button underlay
 - Next and Previous arrow and ESC keys control the slideshow as well
-- After viewing bunch of slides and close it, it scroll down to that thumbnail to give user grab of what just finished on
+- After viewing bunch of slides and close it, it scroll down to that thumbnail and blink it to give user indication of what was the last slide viewed
 - While viewing images in the slideshow, loads next page of images as well
 
 Known bugs and Issues:
