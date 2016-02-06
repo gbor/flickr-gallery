@@ -1,18 +1,19 @@
 // Contains the logic of populating tiles and managing lighbox slideshow
 var Gallery = {
-    photos: [], // (index + 1) are the pages
-    lightBoxOrder: [], // (page - 1) is the key [1 -1] = [sizes]  array order is the order wich it was adde to page.
-    nextPage: 1,
-    perPage: 100,
-    perceivedLoadRatio: 1.5,
-    isLoading: false,
-    prevLoad: 2, // num of prev slides to load not including the current initially. initially === everytime lb opens
-    nextLoad: 5, // num of next slides to load not including the current initially.
+    batchSlideLoad: 6,
     currentSlide: {
         node: null,
         page: null,
         idx: null
     },
+    isLoading: false,
+    lightBoxOrder: [],  // the sizes are populated here in the order in which the API returned each sizes
+    nextLoad: 5, // num of next slides to load not including the current initially.
+    nextPage: 1,
+    perceivedLoadRatio: 1.5,
+    perPage: 100,
+    photos: [], // (index + 1) are the pages
+    prevLoad: 2, // num of prev slides to load not including the current initially. initially === everytime lb opens
     YOS_LOC: {
         lat: '37.87',
         lon: '-119.54'
@@ -41,11 +42,12 @@ var Gallery = {
             // TODO: There seems like a bug where some pages comes back empty but with status 200.
             // Then skip this page and warn max photo is reached.
             if (data.photos.photo.length === 0 ) {
-                console.log('data.photos.photo.length');
-                console.log(data.photos.photo.length);
                 this.isLoading = false;
                 this._closeSpinner.call(this);
                 this._showWarning.call(this);
+                if (this.callNextOnDone) {
+                    this.callNextOnDone = false;
+                }
                 // self.nextPage++;  // we could try to skip this page as well
                 return;
             }
@@ -69,6 +71,14 @@ var Gallery = {
                         // Mean while the others will still be loading
                         if (totalLoaded === Math.floor(this.perPage/this.perceivedLoadRatio)) {
                             this._closeSpinner();
+                            if (this.callNextOnDone) {
+                                this._loadSlides(
+                                    parseInt(this.currentSlide.idx, 10) + 2,
+                                    this.batchSlideLoad
+                                );
+                                this.callNextOnDone = false;
+                                this.onNextClick();
+                            }
                         }
 
                         // however don't change the isLoading state until we're done with this page loading
@@ -81,24 +91,20 @@ var Gallery = {
             });
             self.nextPage++;
         } else if (error) {
-            // something happened;
+            // TODO: handle error;
         }
     },
 
+    // done
     _afterSizesRetrieved: function (data, page, photoIndx, error) {
         if (data && !error) {
             var pageIndx = page - 1;
-            var lbForThisPage = this.lightBoxOrder[pageIndx];
-            if (!lbForThisPage) {
-                this.lightBoxOrder[pageIndx] = [];
-            }
-            // TODO: find a better way to handle this naming
-            // TODO: title is being duplicated on the photos and lightBoxOrder, for simplicity for now
             this.photos[pageIndx].photos.photo[photoIndx].sizes = data.sizes;
             data.photoIndx = photoIndx;
+            data.pageIndx = pageIndx;
             data.title = this.photos[pageIndx].photos.photo[photoIndx].title;
-            this.lightBoxOrder[pageIndx].push(data);
-            var ordIndx = this.lightBoxOrder[pageIndx].length - 1;
+            this.lightBoxOrder.push(data);
+            var ordIndx = this.lightBoxOrder.length - 1;
             this._renderTile(data, page, ordIndx);
         } else if (error) {
             // TODO: handle errors.
@@ -115,7 +121,7 @@ var Gallery = {
             var sq150 = sizes[1];
             if (sq150.label === 'Large Square' || sq150.label == 'Original') {
                 var tiles = document.getElementById('tiles');
-                var title = this._getTitle(page, ordIndx) || 'No Title';
+                var title = this._getTitle(ordIndx) || 'No Title';
                 var tempDiv = document.createElement('div');
                 // TODO:if it's a very small original image, the w and h won't be 150px.
                 //      leave the ratio but put it in a 150x150 container and use flexbox
@@ -192,6 +198,7 @@ var Gallery = {
     // returns
     // TODO: break this into smaller functions, to long
     _loadSlides: function (startIndex, numOfSlides, isPrepend) {
+
         // TODO: worry about going from page to page, or page ending
         // TODO: change indx to idx
         var slidesContainer = document.getElementsByClassName('js-slides')[0];
@@ -215,34 +222,23 @@ var Gallery = {
         for (i = 0; i < numOfSlides; i++) {
             var pageIndex = this.currentSlide.page - 1;
 
-            // has page after
-            if (!isPrepend && (this.perPage - 1  < currentIndex) && true) {
-                currentIndex = currentIndex - this.perPage - 1;
-                pageIndex++;
-                // has page before
-            } else if (isPrepend && (currentIndex < 0) && true) {
-                currentIndex = this.perPage - 1 + currentIndex;
-                pageIndex--;
-            } else if (false){// no more pages ava before or AFter) {
-                return;
-            }
             params = {};
             // TODO: normalize the sizes getting function. we're using it somewhere else as well
             // TODO: change num 6 to a getter function
-            if (!this.lightBoxOrder[pageIndex][currentIndex]) {
+            if (!this.lightBoxOrder[currentIndex]) {
                 // change page breaking for now
                 return true;
             }
 
             var chosenPhoto = 7;
-            var sizes = this.lightBoxOrder[pageIndex][currentIndex].sizes;
+            var sizes = this.lightBoxOrder[currentIndex].sizes;
             // TODO: move 8 out to a config
             if ( sizes && sizes.size.length < 8 ) {
-                chosenPhoto = this.lightBoxOrder[pageIndex][currentIndex].sizes.size.length - 1;
+                chosenPhoto = this.lightBoxOrder[currentIndex].sizes.size.length - 1;
             }
             var chosenSize = sizes.size[chosenPhoto];
             params.src = sizes.size[chosenPhoto].source;
-            params.title = this.lightBoxOrder[pageIndex][currentIndex].title;
+            params.title = this.lightBoxOrder[currentIndex].title;
             // TODO: When the media is not photo, skip and don't add.  never Ran into that case.
             // TODO: when it goes to the next page this page have to change and cannot stay the same
             params.page = pageIndex + 1;
@@ -308,23 +304,19 @@ var Gallery = {
     },
 
     _updateImageNote: function () {
-        var page = this.currentSlide.page;
         var photoIndex = this.currentSlide.idx;
         // TODO: catch exception
-        page = parseInt(page, 10);
         photoIndex = parseInt(photoIndex, 10);
         var total = this._getTotalImageNum();
-        console.log((page - 1) * this.perPage);
-        console.log((page - 1) * this.perPage +  photoIndex + 1);
-        var current = (page - 1) * this.perPage +  photoIndex + 1;
-        var title = this._getTitle(page, photoIndex);
+        var current = photoIndex + 1;
+        var title = this._getTitle(photoIndex);
 
         document.getElementsByClassName('js-photo-count')[0].innerHTML = current + ' of ' + total;
         document.getElementsByClassName('js-image-caption')[0].innerHTML = title;
     },
 
-    _getTitle: function(page, photoIndex) {
-        return this.lightBoxOrder[page - 1][photoIndex].title;
+    _getTitle: function(photoIndex) {
+        return this.lightBoxOrder[photoIndex].title;
     },
 
     onNextClick: function () {
@@ -335,7 +327,13 @@ var Gallery = {
         }
         var next = current.nextElementSibling;
 
-        if (!next) {
+        if (!next || this.callNextOnDone) {
+            return;
+        }
+
+        if (!next.nextElementSibling && !this.isLoading && !this.isPagesComplete() ) {
+            this.callNextOnDone = true;
+            Gallery.populateTiles();
             return;
         }
 
@@ -344,7 +342,7 @@ var Gallery = {
         if (!this.currentSlide.isSlideBeforeLast && !next.nextElementSibling.nextElementSibling) {
             this._loadSlides(
                 parseInt(this._getDataAtt(next.nextElementSibling, 'indx'), 10) + 1,
-                6
+                this.batchSlideLoad
             );
         }
         // TODO: need to change page as well here
@@ -359,23 +357,14 @@ var Gallery = {
     },
 
     _isSlideBeforeLast: function () {
-        var page = this.currentSlide.page;
-        var idx = this.currentSlide.idx;
-        var current = (page - 1) * this.perPage +  idx + 1;
-        // TODO: convert == to ===
-        return ( this._getTotalImageNum() == current + 1 );
+        return this.currentSlide.idx == this.lightBoxOrder.lenght - 2;
     },
 
     _isSecondSlide: function () {
-        // TODO: convert == to ===
-        return (
-            this.currentSlide.page == 1 &&
-            this.currentSlide.idx == 1
-        );
+        return this.currentSlide.idx == 1;
     },
 
     onPrevClick: function () {
-        // TODO: What happens if we're at the beginning of slides? Hide the button
         var current = this.currentSlide.node;
         if (!current) {
             return;
@@ -386,11 +375,10 @@ var Gallery = {
         }
         current.style.left = '100%';
         prev.style.left = '0';
-        // if prev slide before this is not loaded, load 6 more at the beginning.
         if (!this.currentSlide.isSecondSlide && !prev.previousElementSibling.previousElementSibling) {
             this._loadSlides(
                 parseInt(this._getDataAtt(prev.previousElementSibling, 'indx'), 10) - 1,
-                6,
+                this.batchSlideLoad,
                 true
             );
         }
@@ -416,11 +404,16 @@ var Gallery = {
     closeLightbox: function () {
         document.getElementsByTagName('body')[0].style.overflow = '';
         document.getElementsByClassName('lightbox')[0].className = 'lightbox';
-        this.currentSlide.node = null;
-        this.currentSlide.page = null;
-        this.currentSlide.idx = null;
+        // TODO: slow using querySelector but only when we close so it's ok for now.
+        var matchingTileNodes = document.querySelector('[data-indx="' + this.currentSlide.idx + '"]');
+        // TODO: Add smooth scrolling but not fast.
+        matchingTileNodes.scrollIntoView(true);
+        matchingTileNodes.style.opacity = '.1';
+        setTimeout(function () {
+            matchingTileNodes.style.opacity = '';
+        }, 1000);
         var slides =  document.getElementsByClassName('js-slides')[0];
-        // remove all children to reset.
+        // removes all children to reset.
         // much faster and better than using .innerHTML = ''
         while (slides.firstChild) {
             slides.removeChild(slides.firstChild);
