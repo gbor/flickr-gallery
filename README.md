@@ -9,7 +9,7 @@ Design Inspirations:
 - Facebook slideshow
 
 Verified and Tested On:
-- Chrome Version 48.0.2564.103
+- Chrome Version 48.0.2
 - Firefox Version 40.0.3
 - Safari Version 8.0
 - IE10 on Windows 8
@@ -33,13 +33,13 @@ UX in mind features:
 Known bugs and Issues:
 - Since there's no smartphone detection, it still loads the thumbnails Desktop-appropraite numbers and it's slow
 - On chrome, unlike other browsers when height is too small the img ratio is not kept
-- On IE10 the throbber doesn't spin, but looks like a static img.
+- On IE10 the throbber doesn't spin, but looks like a static img
 
 
 Don’t have yet but would love to have:
 - Non-square thumbnails, but create a mosaic much like the yahoo-magazine/flickr image tiles
 - Hypothetically if let’s say the list of photos becomes so big, we’re storing some related data in memory so even though it’s not that big of data, but it’s possible to run out eventually  -Use browser store?
-- Use the IP address of user to figure out the location as accurately as possible and then render the images around that location, http://ipinfo.io/  http://ipinfo.io/developers
+- Use the IP address of user to figure out the location as accurately as possible and then render the images around that location, using http://ipinfo.io/  http://ipinfo.io/developers
 - Lazy load the thumbnail images as well
 - Load the images non-linear on the browser
 - When list of thumbnails shown gets really long, start removing from the top and we can have at most n number of images in DOM
